@@ -1,0 +1,9 @@
+%YAML:1.0
+---
+confTreshold: 0.25
+nmsTreshold: 0.45
+allClassNMS: true
+maxSupportBatchSize: 4
+quantizationInfer: "FP16"       #FP32 or FP16 quantization
+onnxFile: "yolov5s.onnx"
+engineFile: "yolov5s.engine"
