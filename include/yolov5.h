@@ -86,13 +86,15 @@ private:
     bool createEngineIfNotExit();
     void createInferenceEngine(nvinfer1::IHostMemory **modelStream);
     void getBindingDimsInfo();
-    std::vector<detectResult> postProcessing(float *boxesProb, float *confProb, int batch);
-    void doInference(nvinfer1::IExecutionContext& context, float* boxesProb, float* confProb, int batchSize);
-    void getMaxConfsData(const float *confProb, int batch,
-                         std::vector<std::vector<float>> &maxConfVec,  std::vector<std::vector<int>> &maxConfIndexVec) const;
-    void thresholdFilter(const float *boxesProb, std::vector<std::vector<float>> &maxConfVec, std::vector<std::vector<int>> &maxConfIndexVec,
-                         std::vector<std::vector<float>> &confFilterVec, std::vector<std::vector<int>> &confIdFilterVec,
-                         std::vector<std::vector<ObjPos>> &boxFilterVec,float confThreshold) const;
+    std::vector<detectResult> postProcessing(float *boxesProb, int batch);
+    void doInference(nvinfer1::IExecutionContext& context, float* boxesProb, int batchSize);
+    void thresholdFilter(const float *anchorsProb,
+                         int batch,
+                         std::vector<std::vector<float>> &confFilterVec,
+                         std::vector<std::vector<int>> &confIdFilterVec,
+                         std::vector<std::vector<ObjPos>> &boxFilterVec,
+                         float confThreshold);
+    ObjPos xywh2xyxy(float x, float y, float w, float h, float originW, float originH);
     std::vector<detectResult> getDetResult(std::vector<std::vector<float>> &confFilterVec,
                                            std::vector<std::vector<int>> &confIdFilterVec,
                                            std::vector<std::vector<ObjPos>> &boxFilterVec,

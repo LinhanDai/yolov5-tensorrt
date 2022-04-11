@@ -33,310 +33,329 @@ YoloV5::~YoloV5()
     }
 }
 
-//void YoloV5::imgPreProcess(std::vector<cv::Mat> &batchImg) const
-//{
-//    for (int i = 0; i < batchImg.size(); i++)
-//    {
-//        cv::Mat &img = batchImg[i];
-//        cv::resize(img, img, cv::Size(mInputW, mInputH), cv::INTER_LINEAR);
-//    }
-//}
-//
-//void YoloV5::doInference(nvinfer1::IExecutionContext& context, float* boxesProb, float* confProb, int batchSize)
-//{
-//    const nvinfer1::ICudaEngine &engine = context.getEngine();
-//    assert(engine.getNbBindings() == 3), "yolov4 Bindings Dim should be four!";
-//    nvinfer1::Dims inputDims = engine.getBindingDimensions(0);
-//    nvinfer1::Dims d = inputDims;
-//    d.d[0] = batchSize;
-//    if (!mContext->setBindingDimensions(0, d))
-//    {
-//        mGlogger.log(Severity::kERROR, "模型输入维度不正确");
-//        std::abort();
-//    }
-//    // DMA input batch data to device, infer on the batch asynchronously, and DMA output back to host
-//    context.enqueueV2((void **)mBuff, mStream, nullptr);
-//    CHECK(cudaMemcpyAsync(boxesProb, mBuff[1], batchSize * mOutputBoxesSize * sizeof(float), cudaMemcpyDeviceToHost, mStream));
-//    CHECK(cudaMemcpyAsync(confProb, mBuff[2], batchSize * mOutputConfsSize * sizeof(float), cudaMemcpyDeviceToHost, mStream));
-//    cudaStreamSynchronize(mStream);
-//}
-//
-//void YoloV5::getMaxConfsData(const float *confProb, int batch,
-//                             std::vector<std::vector<float>> &maxConfVec,  std::vector<std::vector<int>> &maxConfIndexVec) const
-//{
-//    for (int i = 0; i < batch; i ++)
-//    {
-//        std::vector<float> confVec;
-//        std::vector<int> indexVec;
-//        for (int j = 0; j < mOutputConfsN; j++)
-//        {
-//            float maxConf = 0;
-//            int maxConfIndex = 0;
-//            for (int k = 0; k < mOutputConfsDim; k++)
-//            {
-//                if (confProb[i * mOutputConfsSize + j * mOutputConfsDim + k] > maxConf)
-//                {
-//                    maxConf = confProb[i * mOutputConfsSize + j * mOutputConfsDim + k];
-//                    maxConfIndex = k;
-//                }
-//            }
-//            confVec.push_back(maxConf);
-//            indexVec.push_back(maxConfIndex);
-//        }
-//        maxConfVec.push_back(confVec);
-//        maxConfIndexVec.push_back(indexVec);
-//    }
-//}
-//
-//void YoloV5::thresholdFilter(const float *boxesProb, std::vector<std::vector<float>> &maxConfVec, std::vector<std::vector<int>> &maxConfIndexVec,
-//                             std::vector<std::vector<float>> &confFilterVec, std::vector<std::vector<int>> &confIdFilterVec,
-//                             std::vector<std::vector<ObjPos>> &boxFilterVec,float confThreshold) const
-//{
-//    int batch = maxConfVec.size();
-//    for (int i = 0; i < batch; i++)
-//    {
-//        std::vector<ObjPos> pos;
-//        std::vector<float> conf;
-//        std::vector<int> id;
-//        std::vector<float> confVec = maxConfVec[i];
-//        std::vector<int> confIndexVec = maxConfIndexVec[i];
-//        for (int j= 0; j < confVec.size(); ++j)
-//        {
-//            if (confVec[j] > confThreshold)
-//            {
-//                ObjPos boxPos{};
-//                conf.push_back(confVec[j]);
-//                id.push_back(confIndexVec[j]);
-//                boxPos.x1 = boxesProb[i * mOutputBoxesSize + j * mOutputBoxesDim];
-//                boxPos.y1 = boxesProb[i * mOutputBoxesSize + j * mOutputBoxesDim + 1];
-//                boxPos.x2 = boxesProb[i * mOutputBoxesSize + j * mOutputBoxesDim + 2];
-//                boxPos.y2 = boxesProb[i * mOutputBoxesSize + j * mOutputBoxesDim + 3];
-//                pos.push_back(boxPos);
-//            }
-//        }
-//        confFilterVec.push_back(conf);
-//        confIdFilterVec.push_back(id);
-//        boxFilterVec.push_back(pos);
-//    }
-//}
-//
-//void YoloV5::modifyBoundaryValue(int &x1, int &y1, int &x2, int &y2, int imgWidth, int imgHeight)
-//{
-//    if (x1 < 0)
-//    {
-//        x1 = 0;
-//    }
-//    else if (x1 > imgWidth)
-//    {
-//        x1 = imgWidth;
-//    }
-//    if (x2 < 0)
-//    {
-//        x2 = 0;
-//    }
-//    else if (x2 > imgWidth)
-//    {
-//        x2 = imgWidth;
-//    }
-//    if (y1 < 0)
-//    {
-//        y1 = 0;
-//    }
-//    else if (y1 > imgHeight)
-//    {
-//        y1 = imgHeight;
-//    }
-//    if (y2 < 0)
-//    {
-//        y2 = 0;
-//    }
-//    else if (y2 > imgHeight)
-//    {
-//        y2 = imgHeight;
-//    }
-//}
-//
-//bool YoloV5::checkDetectRect(int &x1, int &y1, int &x2, int &y2, int imgWidth, int imgHeight)
-//{
-//    modifyBoundaryValue(x1, y1, x2, y2, imgWidth, imgHeight);
-//    if ((x2 - x1 > 0) && (y2 - y1 > 0))
-//        return true;
-//    else
-//        return false;
-//}
-//
-//std::vector<detectResult> YoloV5::getDetResult(std::vector<std::vector<float>> &confFilterVec,
-//                                               std::vector<std::vector<int>> &confIdFilterVec,
-//                                               std::vector<std::vector<ObjPos>> &boxFilterVec,
-//                                               std::vector<std::vector<int>> keepVec)
-//{
-//    std::vector<detectResult> result;
-//    int batch = boxFilterVec.size();
-//    for (int i = 0; i < batch; i++)
-//    {
-//        detectResult det;
-//        for (int j = 0; j < keepVec[i].size(); ++j)
-//        {
-//            ObjStu obj{};
-//            int x1 = boxFilterVec[i][keepVec[i][j]].x1 * mImageSizeBatch[i].width;
-//            int y1 = boxFilterVec[i][keepVec[i][j]].y1 * mImageSizeBatch[i].height;
-//            int x2 = boxFilterVec[i][keepVec[i][j]].x2 * mImageSizeBatch[i].width;
-//            int y2 = boxFilterVec[i][keepVec[i][j]].y2 * mImageSizeBatch[i].height;
-//            if(checkDetectRect(x1, y1, x2, y2, mImageSizeBatch[i].width, mImageSizeBatch[i].height))
-//            {
-//                obj.rect.x = boxFilterVec[i][keepVec[i][j]].x1 * mImageSizeBatch[i].width;
-//                obj.rect.y = boxFilterVec[i][keepVec[i][j]].y1 * mImageSizeBatch[i].height;
-//                obj.rect.width = (boxFilterVec[i][keepVec[i][j]].x2 - boxFilterVec[i][keepVec[i][j]].x1) * mImageSizeBatch[i].width;
-//                obj.rect.height = (boxFilterVec[i][keepVec[i][j]].y2 - boxFilterVec[i][keepVec[i][j]].y1) * mImageSizeBatch[i].height;
-//                obj.prob = confFilterVec[i][keepVec[i][j]];
-//                obj.id = confIdFilterVec[i][keepVec[i][j]];
-//                det.push_back(obj);
-//            }
-//        }
-//        result.push_back(det);
-//    }
-//    return result;
-//}
-//
-//// Computes IOU between two bounding boxes
-//float YoloV5::getIOU(cv::Rect_<float> bb_test, cv::Rect_<float> bb_gt)
-//{
-//    float in = (bb_test & bb_gt).area();
-//    float un = bb_test.area() + bb_gt.area() - in;
-//    if (un < DBL_EPSILON)
-//        return 0;
-//
-//    return in / un;
-//}
-//
-//
-//void YoloV5::bubbleSort(std::vector<float> confs, int length, std::vector<int> &indDiff)
-//{
-//    for (int m = 0; m < length; m++)
-//    {
-//        indDiff[m] = m;
-//    }
-//    for (int i = 0; i < length; i++)
-//    {
-//        for (int j = 0; j < length - i - 1; j++)
-//        {
-//            if (confs[j] < confs[j + 1])
-//            {
-//                float temp = confs[j];
-//                confs[j] = confs[j + 1];
-//                confs[j + 1] = temp;
-//                int ind_temp = indDiff[j];
-//                indDiff[j] = indDiff[j + 1];
-//                indDiff[j + 1] = ind_temp;
-//            }
-//        }
-//    }
-//}
-//
-//std::vector<std::vector<int>> YoloV5::allClassNMS(std::vector<std::vector<float>> &confFilterVec,
-//                                                  std::vector<std::vector<int>> &confIdFilterVec,
-//                                                  std::vector<std::vector<ObjPos>> &boxFilterVec,
-//                                                  float nmsThreshold)
-//{
-//    int batch = boxFilterVec.size();
-//    std::vector<std::vector<int>> keepVec;
-//    for (int i = 0; i < batch; i ++)
-//    {
-//        std::vector<int> keep;
-//        std::vector<float> confs = confFilterVec[i];
-//        std::vector<int> ids = confIdFilterVec[i];
-//        std::vector<ObjPos> boxes = boxFilterVec[i];
-//        int targetNum = boxes.size();
-//        std::vector<int> indDiff(targetNum, 0);
-//        bubbleSort(confs, targetNum, indDiff);
-//        while (!indDiff.empty())
-//        {
-//            int idxSelf = indDiff[0];
-//            keep.push_back(idxSelf);
-//            std::vector<float> iouVec;
-//            for (int j = 1; j < indDiff.size(); j++)
-//            {
-//                float iou = getIOU(cv::Rect_<float>(boxes[idxSelf].x1, boxes[idxSelf].y1,
-//                                                    boxes[idxSelf].x2 - boxes[idxSelf].x1,
-//                                                    boxes[idxSelf].y2 - boxes[idxSelf].y1),
-//                                   cv::Rect_<float>(boxes[indDiff[j]].x1, boxes[indDiff[j]].y1,
-//                                                    boxes[indDiff[j]].x2 - boxes[indDiff[j]].x1,
-//                                                    boxes[indDiff[j]].y2 - boxes[indDiff[j]].y1));
-//                iouVec.push_back(iou);
-//            }
-//            std::vector<int> newIndex;
-//            for (int j = 0; j < iouVec.size(); j++)
-//            {
-//                if (iouVec[j] < nmsThreshold)
-//                {
-//                    newIndex.push_back(indDiff[1 + j]);
-//                }
-//            }
-//            indDiff = newIndex;
-//        }
-//        keepVec.push_back(keep);
-//    }
-//    return keepVec;
-//}
-//
-//std::vector<detectResult> YoloV5::postProcessing(float *boxesProb, float *confProb, int batch)
-//{
-//    std::vector<std::vector<int>> keepVec;
-//    std::vector<std::vector<float>> maxConfVec;
-//    std::vector<std::vector<int>> maxConfIndexVec;
-//    std::vector<std::vector<float>> confFilterVec;
-//    std::vector<std::vector<int>> confIdFilterVec;
-//    std::vector<std::vector<ObjPos>> boxFilterVec;
-//    getMaxConfsData(confProb, batch, maxConfVec, maxConfIndexVec);
-//    thresholdFilter(boxesProb, maxConfVec, maxConfIndexVec, confFilterVec, confIdFilterVec, boxFilterVec, mConfTreshold);
-//    if (mAllClasssNMS)
-//    {
-//        keepVec = allClassNMS(confFilterVec, confIdFilterVec, boxFilterVec, mNMSTreshold);
-//    }
-//    std::vector<detectResult> result = getDetResult(confFilterVec, confIdFilterVec, boxFilterVec, keepVec);
-//    return result;
-//}
-//
-//void YoloV5::initInputImageSize(std::vector<cv::Mat> &batchImg)
-//{
-//    int batch = batchImg.size();
-//    for (int i = 0; i < batch; i++)
-//    {
-//        ImgInfo info{};
-//        info.width = batchImg[i].cols;
-//        info.height = batchImg[i].rows;
-//        mImageSizeBatch.push_back(info);
-//    }
-//}
-//
-//std::vector<detectResult> YoloV5::detect(std::vector<cv::Mat> &batchImg)
-//{
-//    std::vector<cv::Mat> detectMatVec;
-//    for (auto & img : batchImg)
-//    {
-//        detectMatVec.push_back(img);
-//    }
-//    int batch = detectMatVec.size();
-//    initInputImageSize(detectMatVec);
-//    imgPreProcess(detectMatVec);
-//    int inputSingleByteNum = mInputH * mInputW * mInputC;
-//    for (size_t i = 0; i < batch; i++)
-//    {
-//        cudaMemcpyAsync(mInputData + i * inputSingleByteNum, detectMatVec[i].data, inputSingleByteNum,
-//                        cudaMemcpyHostToDevice, mStream);
-//    }
-//    cudaPreProcess(mBuff[0], mInputData, mInputW, mInputH, mInputC, batch, mStream);
-//    float *boxesProb = (float *) malloc(batch * mOutputBoxesSize * sizeof(float));
-//    float *confProb = (float *) malloc(batch * mOutputConfsSize * sizeof(float));
-//    memset(boxesProb, 0, batch * mOutputBoxesSize * sizeof(float));
-//    memset(confProb, 0, batch * mOutputConfsSize * sizeof(float));
-//    doInference(*mContext, boxesProb, confProb, batch);
-//    std::vector<detectResult> detectResult = postProcessing(boxesProb, confProb, batch);
-//    free(boxesProb);
-//    free(confProb);
-//    mImageSizeBatch.clear();
-//    return detectResult;
-//}
+void YoloV5::imgPreProcess(std::vector<cv::Mat> &batchImg) const
+{
+    for (int i = 0; i < batchImg.size(); i++)
+    {
+        cv::Mat &img = batchImg[i];
+        float ratioW = mInputW / mImageSizeBatch[i].width;
+        float ratioH = mInputH / mImageSizeBatch[i].height;
+        int tw, th, tx1, tx2, ty1, ty2;
+
+        if (ratioH > ratioW)
+        {
+            tw = mInputW;
+            th = int(ratioW * mImageSizeBatch[i].height);
+            tx1 = 0;
+            tx2 = 0;
+            ty1 = int((mInputH - th) / 2);
+            ty2 = mInputH - th - ty1;
+        }
+        else
+        {
+            tw = int (ratioH * mImageSizeBatch[i].width);
+            th = mInputH;
+            tx1 = int((mInputW - tw) / 2);
+            tx2 = mInputW - tw - tx1;
+            ty1 = 0;
+            ty2 = 0;
+        }
+        cv::resize(img, img, cv::Size(tw, th), cv::INTER_LINEAR);
+        cv::copyMakeBorder(img, img, ty1, ty2, tx1, tx2, cv::BORDER_CONSTANT, cv::Scalar(128, 128, 128));
+    }
+}
+
+void YoloV5::doInference(nvinfer1::IExecutionContext& context, float* boxesProb, int batchSize)
+{
+    const nvinfer1::ICudaEngine &engine = context.getEngine();
+    assert(engine.getNbBindings() == 2), "yolov5 Bindings Dim should be four!";
+    nvinfer1::Dims inputDims = engine.getBindingDimensions(0);
+    nvinfer1::Dims d = inputDims;
+    d.d[0] = batchSize;
+    if (!mContext->setBindingDimensions(0, d))
+    {
+        mGlogger.log(Severity::kERROR, "模型输入维度不正确");
+        std::abort();
+    }
+    // DMA input batch data to device, infer on the batch asynchronously, and DMA output back to host
+    context.enqueueV2((void **)mBuff, mStream, nullptr);
+    CHECK(cudaMemcpyAsync(boxesProb, mBuff[1], batchSize * mOutputAnchorsSize * sizeof(float), cudaMemcpyDeviceToHost, mStream));
+    cudaStreamSynchronize(mStream);
+}
+
+ObjPos YoloV5::xywh2xyxy(float x, float y, float w, float h, float originW, float originH)
+{
+    ObjPos pos{};
+    float ratioW = mInputW / originW;
+    float ratioH = mInputH / originH;
+    if (ratioH > ratioW)
+    {
+        pos.x1 = (x - w / 2) / ratioW;
+        pos.x2 = (x + w / 2) / ratioW;
+        pos.y1 = (y - h / 2 - (mInputH - ratioW * originH) / 2) / ratioW;
+        pos.y2 = (y + h / 2 - (mInputH - ratioW * originH) / 2) / ratioW;
+
+    }
+    else
+    {
+        pos.x1 = (x - w / 2 - (mInputW - ratioH * originW) / 2) / ratioH;
+        pos.x2 = (x + w / 2 - (mInputW - ratioH * originW) / 2) / ratioH ;
+        pos.y1 = (y - h / 2) / ratioH;
+        pos.y2 = (y + h / 2) / ratioH;
+    }
+    return pos;
+}
+
+void YoloV5::thresholdFilter(const float *anchorsProb, int batch, std::vector<std::vector<float>> &confFilterVec,
+                             std::vector<std::vector<int>> &confIdFilterVec,
+                             std::vector<std::vector<ObjPos>> &boxFilterVec,
+                             float confThreshold)
+{
+    for (int i = 0; i < batch; i++)
+    {
+        std::vector<float> maxConf;
+        std::vector<int> maxSoreId;
+        std::vector<ObjPos> obj;
+        for (int j = 0; j < mOutputAnchorsNum; j ++)
+        {
+            std::vector<float> confVec;
+            std::vector<float> score;
+            float conf = anchorsProb[i * mOutputAnchorsSize + j * mOutputAnchorsDim + 4];
+            if (conf > confThreshold)
+            {
+                for (int k = 5; k < mOutputAnchorsDim; k++)
+                {
+                    confVec.push_back(anchorsProb[i * mOutputAnchorsSize + j * mOutputAnchorsDim + k] * conf);
+                }
+                float value = *max_element(confVec.begin(),confVec.end());
+                auto valueIter = max_element(confVec.begin(), confVec.end());
+                int index = distance(confVec.begin(), valueIter);
+                maxSoreId.push_back(index);
+                maxConf.push_back(value);
+                ObjPos pos = xywh2xyxy(anchorsProb[i * mOutputAnchorsSize + j * mOutputAnchorsDim],
+                                       anchorsProb[i * mOutputAnchorsSize + j * mOutputAnchorsDim + 1],
+                                       anchorsProb[i * mOutputAnchorsSize + j * mOutputAnchorsDim + 2],
+                                       anchorsProb[i * mOutputAnchorsSize + j * mOutputAnchorsDim + 3],
+                                       mImageSizeBatch[i].width, mImageSizeBatch[i].height);
+                obj.push_back(pos);
+            }
+        }
+        confFilterVec.push_back(maxConf);
+        confIdFilterVec.push_back(maxSoreId);
+        boxFilterVec.push_back(obj);
+    }
+}
+
+void YoloV5::modifyBoundaryValue(int &x1, int &y1, int &x2, int &y2, int imgWidth, int imgHeight)
+{
+    if (x1 < 0)
+    {
+        x1 = 0;
+    }
+    else if (x1 > imgWidth)
+    {
+        x1 = imgWidth;
+    }
+    if (x2 < 0)
+    {
+        x2 = 0;
+    }
+    else if (x2 > imgWidth)
+    {
+        x2 = imgWidth;
+    }
+    if (y1 < 0)
+    {
+        y1 = 0;
+    }
+    else if (y1 > imgHeight)
+    {
+        y1 = imgHeight;
+    }
+    if (y2 < 0)
+    {
+        y2 = 0;
+    }
+    else if (y2 > imgHeight)
+    {
+        y2 = imgHeight;
+    }
+}
+
+bool YoloV5::checkDetectRect(int &x1, int &y1, int &x2, int &y2, int imgWidth, int imgHeight)
+{
+    modifyBoundaryValue(x1, y1, x2, y2, imgWidth, imgHeight);
+    if ((x2 - x1 > 0) && (y2 - y1 > 0))
+        return true;
+    else
+        return false;
+}
+
+std::vector<detectResult> YoloV5::getDetResult(std::vector<std::vector<float>> &confFilterVec,
+                                               std::vector<std::vector<int>> &confIdFilterVec,
+                                               std::vector<std::vector<ObjPos>> &boxFilterVec,
+                                               std::vector<std::vector<int>> keepVec)
+{
+    std::vector<detectResult> result;
+    int batch = boxFilterVec.size();
+    for (int i = 0; i < batch; i++)
+    {
+        detectResult det;
+        for (int j = 0; j < keepVec[i].size(); ++j)
+        {
+            ObjStu obj{};
+            int x1 = boxFilterVec[i][keepVec[i][j]].x1;
+            int y1 = boxFilterVec[i][keepVec[i][j]].y1;
+            int x2 = boxFilterVec[i][keepVec[i][j]].x2;
+            int y2 = boxFilterVec[i][keepVec[i][j]].y2;
+            if(checkDetectRect(x1, y1, x2, y2, mImageSizeBatch[i].width, mImageSizeBatch[i].height))
+            {
+                obj.rect.x = boxFilterVec[i][keepVec[i][j]].x1;
+                obj.rect.y = boxFilterVec[i][keepVec[i][j]].y1;
+                obj.rect.width = (boxFilterVec[i][keepVec[i][j]].x2 - boxFilterVec[i][keepVec[i][j]].x1);
+                obj.rect.height = (boxFilterVec[i][keepVec[i][j]].y2 - boxFilterVec[i][keepVec[i][j]].y1);
+                obj.prob = confFilterVec[i][keepVec[i][j]];
+                obj.id = confIdFilterVec[i][keepVec[i][j]];
+                det.push_back(obj);
+            }
+        }
+        result.push_back(det);
+    }
+    return result;
+}
+
+// Computes IOU between two bounding boxes
+float YoloV5::getIOU(cv::Rect_<float> bb_test, cv::Rect_<float> bb_gt)
+{
+    float in = (bb_test & bb_gt).area();
+    float un = bb_test.area() + bb_gt.area() - in;
+    if (un < DBL_EPSILON)
+        return 0;
+
+    return in / un;
+}
+
+
+void YoloV5::bubbleSort(std::vector<float> confs, int length, std::vector<int> &indDiff)
+{
+    for (int m = 0; m < length; m++)
+    {
+        indDiff[m] = m;
+    }
+    for (int i = 0; i < length; i++)
+    {
+        for (int j = 0; j < length - i - 1; j++)
+        {
+            if (confs[j] < confs[j + 1])
+            {
+                float temp = confs[j];
+                confs[j] = confs[j + 1];
+                confs[j + 1] = temp;
+                int ind_temp = indDiff[j];
+                indDiff[j] = indDiff[j + 1];
+                indDiff[j + 1] = ind_temp;
+            }
+        }
+    }
+}
+
+std::vector<std::vector<int>> YoloV5::allClassNMS(std::vector<std::vector<float>> &confFilterVec,
+                                                  std::vector<std::vector<int>> &confIdFilterVec,
+                                                  std::vector<std::vector<ObjPos>> &boxFilterVec,
+                                                  float nmsThreshold)
+{
+    int batch = boxFilterVec.size();
+    std::vector<std::vector<int>> keepVec;
+    for (int i = 0; i < batch; i ++)
+    {
+        std::vector<int> keep;
+        std::vector<float> confs = confFilterVec[i];
+        std::vector<int> ids = confIdFilterVec[i];
+        std::vector<ObjPos> boxes = boxFilterVec[i];
+        int targetNum = boxes.size();
+        std::vector<int> indDiff(targetNum, 0);
+        bubbleSort(confs, targetNum, indDiff);
+        while (!indDiff.empty())
+        {
+            int idxSelf = indDiff[0];
+            keep.push_back(idxSelf);
+            std::vector<float> iouVec;
+            for (int j = 1; j < indDiff.size(); j++)
+            {
+                float iou = getIOU(cv::Rect_<float>(boxes[idxSelf].x1, boxes[idxSelf].y1,
+                                                    boxes[idxSelf].x2 - boxes[idxSelf].x1,
+                                                    boxes[idxSelf].y2 - boxes[idxSelf].y1),
+                                   cv::Rect_<float>(boxes[indDiff[j]].x1, boxes[indDiff[j]].y1,
+                                                    boxes[indDiff[j]].x2 - boxes[indDiff[j]].x1,
+                                                    boxes[indDiff[j]].y2 - boxes[indDiff[j]].y1));
+                iouVec.push_back(iou);
+            }
+            std::vector<int> newIndex;
+            for (int j = 0; j < iouVec.size(); j++)
+            {
+                if (iouVec[j] < nmsThreshold)
+                {
+                    newIndex.push_back(indDiff[1 + j]);
+                }
+            }
+            indDiff = newIndex;
+        }
+        keepVec.push_back(keep);
+    }
+    return keepVec;
+}
+
+std::vector<detectResult> YoloV5::postProcessing(float *anchorsProb, int batch)
+{
+    std::vector<std::vector<int>> keepVec;
+    std::vector<std::vector<float>> confFilterVec;
+    std::vector<std::vector<int>> confIdFilterVec;
+    std::vector<std::vector<ObjPos>> boxFilterVec;
+    thresholdFilter(anchorsProb, batch, confFilterVec, confIdFilterVec, boxFilterVec, mConfTreshold);
+    if (mAllClasssNMS)
+    {
+        keepVec = allClassNMS(confFilterVec, confIdFilterVec, boxFilterVec, mNMSTreshold);
+    }
+    std::vector<detectResult> result = getDetResult(confFilterVec, confIdFilterVec, boxFilterVec, keepVec);
+    return result;
+}
+
+void YoloV5::initInputImageSize(std::vector<cv::Mat> &batchImg)
+{
+    int batch = batchImg.size();
+    for (int i = 0; i < batch; i++)
+    {
+        ImgInfo info{};
+        info.width = batchImg[i].cols;
+        info.height = batchImg[i].rows;
+        mImageSizeBatch.push_back(info);
+    }
+}
+
+std::vector<detectResult> YoloV5::detect(std::vector<cv::Mat> &batchImg)
+{
+    std::vector<cv::Mat> detectMatVec;
+    for (auto & img : batchImg)
+    {
+        detectMatVec.push_back(img);
+    }
+    int batch = detectMatVec.size();
+    initInputImageSize(detectMatVec);
+    imgPreProcess(detectMatVec);
+    int inputSingleByteNum = mInputH * mInputW * mInputC;
+    for (size_t i = 0; i < batch; i++)
+    {
+        cudaMemcpyAsync(mInputData + i * inputSingleByteNum, detectMatVec[i].data, inputSingleByteNum,
+                        cudaMemcpyHostToDevice, mStream);
+    }
+    cudaPreProcess(mBuff[0], mInputData, mInputW, mInputH, mInputC, batch, mStream);
+    float *anchorsProb = (float *) malloc(batch * mOutputAnchorsSize * sizeof(float));
+    doInference(*mContext, anchorsProb, batch);
+    std::vector<detectResult> detectResult = postProcessing(anchorsProb, batch);
+    free(anchorsProb);
+    mImageSizeBatch.clear();
+    return detectResult;
+}
 
 void YoloV5::readParameters(const std::string& configPath)
 {

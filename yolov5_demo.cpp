@@ -37,17 +37,17 @@ int main()
     cv::String path("../data/*.jpg");
     cv::glob(path, images);
     std::shared_ptr<YoloV5> yoloObj = std::make_shared<YoloV5>(configPath);
-//    for (auto image: images)
-//    {
-//        std::vector<cv::Mat> batch_img;
-//        cv::Mat img = cv::imread(image, cv::IMREAD_COLOR);
-//        batch_img.push_back(img);
-//        double start = cv::getTickCount();
-//        std::vector<detectResult> result = yoloObj->detect(batch_img);
-//        double end = cv::getTickCount();
-//        double fps =  1 / ((end - start) / cv::getTickFrequency());
-//        std::cout << "fps:" << fps << std::endl;
-//        showResult(result, batch_img);
-//    }
+    for (auto image: images)
+    {
+        std::vector<cv::Mat> batch_img;
+        cv::Mat img = cv::imread(image, cv::IMREAD_COLOR);
+        batch_img.push_back(img);
+        double start = cv::getTickCount();
+        std::vector<detectResult> result = yoloObj->detect(batch_img);
+        double end = cv::getTickCount();
+        double fps =  1 / ((end - start) / cv::getTickFrequency());
+        std::cout << "fps:" << fps << std::endl;
+        showResult(result, batch_img);
+    }
     return 0;
 }
