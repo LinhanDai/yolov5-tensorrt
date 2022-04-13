@@ -210,10 +210,10 @@ std::vector<detectResult> YoloV5::getDetResult(std::vector<std::vector<float>> &
             int y2 = boxFilterVec[i][keepVec[i][j]].y2;
             if(checkDetectRect(x1, y1, x2, y2, mImageSizeBatch[i].width, mImageSizeBatch[i].height))
             {
-                obj.rect.x = boxFilterVec[i][keepVec[i][j]].x1;
-                obj.rect.y = boxFilterVec[i][keepVec[i][j]].y1;
-                obj.rect.width = (boxFilterVec[i][keepVec[i][j]].x2 - boxFilterVec[i][keepVec[i][j]].x1);
-                obj.rect.height = (boxFilterVec[i][keepVec[i][j]].y2 - boxFilterVec[i][keepVec[i][j]].y1);
+                obj.rect.x = x1;
+                obj.rect.y = y1;
+                obj.rect.width = x2 - x1;
+                obj.rect.height = y2 - y1;
                 obj.prob = confFilterVec[i][keepVec[i][j]];
                 obj.id = confIdFilterVec[i][keepVec[i][j]];
                 det.push_back(obj);
